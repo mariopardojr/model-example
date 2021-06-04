@@ -1,4 +1,5 @@
 const connection = require('./connection');
+const { ObjectId } = require('mongodb');
 
 const getNewAuthor = ({id, firstName, middleName, lastName}) => {
   const fullName = [firstName, middleName, lastName].filter((name) => name).join(' ');
@@ -21,21 +22,31 @@ const serialize = (authorData) => {
 }
 
 const getAll = async () => {
-  const [authors] = await connection
-    .execute('SELECT id,first_name, middle_name, last_name FROM model_example.authors');
-  return authors.map(serialize).map(getNewAuthor);
+  return connection()
+    .then((db) => db.collection('authors').find().toArray())
+    .then((authors) => {
+      return authors.map(({ _id, firstName, middleName, lastName }) => {
+        return getNewAuthor({
+          id: _id,
+          firstName,
+          middleName,
+          lastName,
+        });
+      });
+    });
 }
 
 const findById = async (id) => {
-  const [authorData] = await connection
-    .execute('SELECT id,first_name, middle_name, last_name FROM model_example.authors WHERE id=?', [id]);
-  if (authorData.length === 0) return null;
-  const {firstName, middleName, lastName } = authorData.map(serialize)[0];
+  const authorData = await connection()
+    .then((db) => db.collection('authors').findOne(ObjectId(id)));
+  
+  if (!authorData) return null;
+  const { firstName, middleName, lastName } = authorData;
   return getNewAuthor({
     id,
     firstName,
     middleName,
-    lastName,
+    lastName
   });
 }
 
@@ -45,10 +56,13 @@ const isValid = (firstName, _middleName, lastName ) => {
   return true;
 }
 
-const create = async (firstName, middleName, lastName) => connection.execute(
-    'INSERT INTO model_example.authors (first_name, middle_name, last_name) VALUES (?, ?, ?)',
-    [firstName, middleName, lastName]
-  );
+const create = async (firstName, middleName, lastName) => {
+  await connection().then((db) => db.collection('authors').insertOne({
+    firstName,
+    middleName,
+    lastName
+  }));
+}
 
 
 module.exports = {
