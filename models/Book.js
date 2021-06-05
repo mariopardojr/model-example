@@ -2,12 +2,6 @@ const connection = require('./connection');
 const { ObjectId  } = require('mongodb')
 const Author = require('./Author');
 
-const serialize = (bookData) => ({
-  id: bookData._id,
-  title: bookData.title,
-  authorId: bookData.author_id,
-})
-
 const getAll = async () => {
   return connection()
     .then((db) => db.collection('books').find().toArray())
