@@ -11,38 +11,49 @@ const serialize = (bookData) => ({
 const getAll = async () => {
   return connection()
     .then((db) => db.collection('books').find().toArray())
-    .then((books) => books.map(serialize));
+    .then((books) => {
+      return books.map(({ _id, title, author_id }) => {
+        return {
+          id: _id,
+          title,
+          authorId: author_id
+        }
+      })
+    });
 }
 
 const getByAuthorId = async (id) => {
   return connection()
     .then((db) => db.collection('books').find({ author_id: Number(id)}).toArray())
-    .then((books) => books.map(serialize));
+    .then((books) => {
+      return books.map(({ _id, title, author_id}) => {
+        return { 
+          id: _id,
+          title,
+          authorId: author_id,
+        }
+      })
+    });
 }
 
 const findById = async (id) => {
-  return connection()
-    .then((db) => db.collection('books').find({ _id: ObjectId(id) }).toArray())
-    .then((books) => books.map(serialize)[0]);
-}
-
-const isValid = async (title, authorId) => {
-  if (!title || typeof title !== 'string' || title.length < 3) return false;
-  if (!authorId || typeof authorId !== 'string' || authorId.length !== 24 || !(await Author.findById(authorId))) return false;
-  return true;
-}
-
-const create = async (title, authorId) => connection()
-  .then((db) => db.collection('books').insertOne({
+  const bookData = await connection()
+    .then((db) => db.collection('books').findOne(ObjectId(id)))
+  if (!bookData) return null;
+  const { title, author_id } = bookData
+  return {
+    id,
     title,
-    authorId,
-  }))
-  
+    authorId: author_id,
+  }
+}
+
+const create = async (title, authorId) => await connection()
+  .then((db) => db.collection('books').insertOne({ title, author_id: authorId }))
 
 module.exports = {
   getAll,
   getByAuthorId,
   findById,
-  isValid,
   create,
 }

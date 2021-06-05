@@ -4,9 +4,9 @@ const app = express();
 const PORT = 3000;
 
 
-const Author = require('./models/Author');
-const Book = require('./models/Book');
-
+const Author = require('./services/Author');
+const Book = require('./services/Book');
+ 
 app.use(bodyParser.json());
 
 app.get('/authors', async (_req, res) => {
@@ -24,13 +24,13 @@ app.get('/authors/:id', async (req, res) => {
 
 app.post('/authors', async (req, res) => {
   const { firstName, middleName, lastName } = req.body;
-  if (!Author.isValid(firstName, middleName, lastName)) return res.status(404).json({ message: 'Invalid data'})
-  await Author.create(firstName, middleName, lastName);
-  res.status(201).json({ message: 'Author successfully created!' });
+  const author = await Author.create(firstName, middleName, lastName);
+  if (!author) return res.status(404).json({ message: 'Invalid data'})
+  res.status(201).json(author);
 });
 
 app.get('/books', async (req, res) => {
-  const id = req.query.id;
+  const { id } = req.query;
   const books = await Book.getAll();
 
   if (!id) {
@@ -51,8 +51,8 @@ app.get('/books/:id', async (req, res) => {
 
 app.post('/books', async (req, res) => {
   const { title, authorId } = req.body;
-  if (!Book.isValid(title, authorId)) return res.status(400).json({ message: 'Invalid data' });
-  await Book.create(title, authorId);
+  const book = await Book.create(title, authorId);
+  if (!book) return res.status(400).json({ message: 'Invalid data' });
   res.status(201).json({ message: 'Book successfully created'})
 });
 
