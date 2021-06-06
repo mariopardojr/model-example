@@ -43,7 +43,7 @@ const findById = async (id) => {
 }
 
 const create = async (title, authorId) => await connection()
-  .then((db) => db.collection('books').insertOne({ title, author_id: authorId }))
+  .then((db) => db.collection('books').insertOne({ title, author_id: authorId }));
 
 module.exports = {
   getAll,
